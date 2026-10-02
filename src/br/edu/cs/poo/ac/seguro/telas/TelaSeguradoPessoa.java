@@ -1,126 +1,125 @@
 package br.edu.cs.poo.ac.seguro.telas;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
 
-import br.edu.cs.poo.ac.seguro.entidades.Endereco;
 import br.edu.cs.poo.ac.seguro.entidades.SeguradoPessoa;
 import br.edu.cs.poo.ac.seguro.mediators.SeguradoPessoaMediator;
 
+/**
+ * CRUD de segurado pessoa em uma unica tela.
+ */
+@SuppressWarnings("serial")
 public class TelaSeguradoPessoa extends JFrame {
-    private final SeguradoPessoaMediator mediator = SeguradoPessoaMediator.getInstancia();
+	private final SeguradoPessoaMediator mediator = SeguradoPessoaMediator.getInstancia();
 
-    private final JTextField cpf = new JTextField(16);
-    private final JTextField nome = new JTextField(25);
-    private final JTextField nascimento = new JTextField(10);
-    private final JTextField renda = new JTextField(12);
-    private final JTextField logradouro = new JTextField(25);
-    private final JTextField cep = new JTextField(10);
-    private final JTextField numero = new JTextField(10);
-    private final JTextField complemento = new JTextField(20);
-    private final JTextField pais = new JTextField("Brasil", 15);
-    private final JComboBox<String> estado = new JComboBox<>(new String[]{"PE","SP","RJ","MG","BA","PR","RS","SC","CE","PB","AL","RN","SE","ES","GO","DF","MT","MS","TO","PA","AM","RO","RR","AC","AP","MA","PI"});
-    private final JTextField cidade = new JTextField(20);
+	private final JFormattedTextField txtCpf = UtilTela.campoMascara("###########");
+	private final JTextField txtNome = new JTextField(28);
+	private final JFormattedTextField txtDataNascimento = UtilTela.campoData();
+	private final JSpinner spRenda = UtilTela.campoValor();
+	private final JTextField txtBonus = new JTextField("0.00", 10);
+	private final PainelEndereco painelEndereco = new PainelEndereco();
 
-    public TelaSeguradoPessoa() {
-        setTitle("Cadastro de Segurado Pessoa");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(720, 560);
-        setLocationRelativeTo(null);
-        add(criarFormulario(), BorderLayout.CENTER);
-    }
+	private final JButton btnBuscar = new JButton("Buscar");
+	private final JButton btnIncluir = new JButton("Incluir");
+	private final JButton btnAlterar = new JButton("Alterar");
+	private final JButton btnExcluir = new JButton("Excluir");
+	private final JButton btnLimpar = new JButton("Limpar");
 
-    private JPanel criarFormulario() {
-        JPanel painel = new JPanel(new GridBagLayout());
-        int linha = 0;
-        addCampo(painel, linha++, "CPF:", cpf);
-        addCampo(painel, linha++, "Nome:", nome);
-        addCampo(painel, linha++, "Nascimento (AAAA-MM-DD):", nascimento);
-        addCampo(painel, linha++, "Renda:", renda);
-        addCampo(painel, linha++, "Logradouro:", logradouro);
-        addCampo(painel, linha++, "CEP:", cep);
-        addCampo(painel, linha++, "Número:", numero);
-        addCampo(painel, linha++, "Complemento:", complemento);
-        addCampo(painel, linha++, "País:", pais);
-        addCampo(painel, linha++, "Estado:", estado);
-        addCampo(painel, linha++, "Cidade:", cidade);
+	public TelaSeguradoPessoa() {
+		UtilTela.titulo(this, "Segurado Pessoa");
+		txtBonus.setEditable(false);
 
-        JPanel botoes = new JPanel();
-        JButton buscar = new JButton("Buscar");
-        JButton incluir = new JButton("Incluir");
-        JButton alterar = new JButton("Alterar");
-        JButton excluir = new JButton("Excluir");
-        JButton limpar = new JButton("Limpar");
-        botoes.add(buscar); botoes.add(incluir); botoes.add(alterar); botoes.add(excluir); botoes.add(limpar);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = linha; gbc.gridwidth = 2; gbc.insets = new Insets(12, 4, 4, 4);
-        painel.add(botoes, gbc);
+		JPanel form = UtilTela.painelForm();
+		int y = 0;
+		UtilTela.linha(form, y++, "CPF:", txtCpf);
+		UtilTela.linha(form, y++, "Nome:", txtNome);
+		UtilTela.linha(form, y++, "Data de nascimento:", txtDataNascimento);
+		UtilTela.linha(form, y++, "Renda (R$):", spRenda);
+		UtilTela.linha(form, y++, "Bônus (somente leitura):", txtBonus);
+		java.awt.GridBagConstraints c = new java.awt.GridBagConstraints();
+		c.gridy = y;
+		c.gridx = 0;
+		c.gridwidth = 2;
+		c.fill = java.awt.GridBagConstraints.HORIZONTAL;
+		c.insets = new java.awt.Insets(8, 6, 3, 6);
+		form.add(painelEndereco, c);
 
-        buscar.addActionListener(e -> buscar());
-        incluir.addActionListener(e -> incluir());
-        alterar.addActionListener(e -> alterar());
-        excluir.addActionListener(e -> excluir());
-        limpar.addActionListener(e -> limpar());
-        return painel;
-    }
+		btnBuscar.addActionListener(e -> UtilTela.executar(this, this::buscar));
+		btnIncluir.addActionListener(e -> UtilTela.executar(this, this::incluir));
+		btnAlterar.addActionListener(e -> UtilTela.executar(this, this::alterar));
+		btnExcluir.addActionListener(e -> UtilTela.executar(this, this::excluir));
+		btnLimpar.addActionListener(e -> limpar());
 
-    private void addCampo(JPanel painel, int linha, String label, java.awt.Component campo) {
-        GridBagConstraints l = new GridBagConstraints();
-        l.gridx = 0; l.gridy = linha; l.anchor = GridBagConstraints.WEST; l.insets = new Insets(4, 8, 4, 8);
-        painel.add(new JLabel(label), l);
-        GridBagConstraints c = new GridBagConstraints();
-        c.gridx = 1; c.gridy = linha; c.weightx = 1; c.fill = GridBagConstraints.HORIZONTAL; c.insets = new Insets(4, 8, 4, 8);
-        painel.add(campo, c);
-    }
+		UtilTela.montarJanela(this, form, UtilTela.painelBotoes(btnBuscar, btnIncluir, btnAlterar, btnExcluir, btnLimpar));
+	}
 
-    private SeguradoPessoa lerTela() {
-        LocalDate data;
-        try { data = LocalDate.parse(nascimento.getText().trim()); }
-        catch (DateTimeParseException ex) { throw new IllegalArgumentException("Data deve estar no formato AAAA-MM-DD"); }
-        double valor;
-        try { valor = Double.parseDouble(renda.getText().replace(',', '.').trim()); }
-        catch (NumberFormatException ex) { throw new IllegalArgumentException("Renda inválida"); }
-        Endereco endereco = new Endereco(logradouro.getText(), cep.getText(), numero.getText(), complemento.getText(), pais.getText(), (String) estado.getSelectedItem(), cidade.getText());
-        return new SeguradoPessoa(nome.getText(), endereco, data, BigDecimal.ZERO, cpf.getText(), valor);
-    }
+	private String cpf() {
+		return UtilTela.textoMascarado(txtCpf);
+	}
 
-    private void incluir() { executar(() -> mediator.incluirSeguradoPessoa(lerTela())); }
-    private void alterar() { executar(() -> mediator.alterarSeguradoPessoa(lerTela())); }
-    private void excluir() { executarMensagem(mediator.excluirSeguradoPessoa(cpf.getText())); }
+	private SeguradoPessoa montar(BigDecimal bonus) {
+		return new SeguradoPessoa(txtNome.getText(), painelEndereco.obter(),
+				UtilTela.lerData(txtDataNascimento, "Data de nascimento"), bonus, cpf(),
+				UtilTela.lerValor(spRenda, "Renda"));
+	}
 
-    private void buscar() {
-        SeguradoPessoa seg = mediator.buscarSeguradoPessoa(cpf.getText());
-        if (seg == null) { JOptionPane.showMessageDialog(this, "Segurado pessoa não encontrado"); return; }
-        preencher(seg);
-    }
+	private void buscar() {
+		if (cpf().isEmpty()) {
+			UtilTela.aviso(this, "CPF deve ser informado");
+			return;
+		}
+		SeguradoPessoa seg = mediator.buscarSeguradoPessoa(cpf());
+		if (seg == null) {
+			UtilTela.aviso(this, "CPF do segurado pessoa não existente");
+			return;
+		}
+		txtNome.setText(seg.getNome());
+		UtilTela.mostrarData(txtDataNascimento, seg.getDataNascimento());
+		spRenda.setValue(seg.getRenda());
+		txtBonus.setText(seg.getBonus().toPlainString());
+		painelEndereco.preencher(seg.getEndereco());
+	}
 
-    private void preencher(SeguradoPessoa seg) {
-        cpf.setText(seg.getCpf()); nome.setText(seg.getNome());
-        nascimento.setText(seg.getDataNascimento() == null ? "" : seg.getDataNascimento().toString());
-        renda.setText(Double.toString(seg.getRenda()));
-        Endereco e = seg.getEndereco();
-        if (e != null) { logradouro.setText(e.getLogradouro()); cep.setText(e.getCep()); numero.setText(e.getNumero()); complemento.setText(e.getComplemento()); pais.setText(e.getPais()); estado.setSelectedItem(e.getEstado()); cidade.setText(e.getCidade()); }
-    }
+	private void incluir() {
+		String erro = mediator.incluirSeguradoPessoa(montar(BigDecimal.ZERO));
+		UtilTela.resultado(this, erro, "Segurado pessoa incluído com sucesso.");
+	}
 
-    private void executar(java.util.function.Supplier<String> acao) {
-        try { executarMensagem(acao.get()); }
-        catch (RuntimeException ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE); }
-    }
-    private void executarMensagem(String msg) { JOptionPane.showMessageDialog(this, msg == null ? "Operação realizada com sucesso" : msg); }
-    private void limpar() { cpf.setText(""); nome.setText(""); nascimento.setText(""); renda.setText(""); logradouro.setText(""); cep.setText(""); numero.setText(""); complemento.setText(""); pais.setText("Brasil"); cidade.setText(""); }
+	private void alterar() {
+		SeguradoPessoa existente = mediator.buscarSeguradoPessoa(cpf());
+		BigDecimal bonus = existente == null ? BigDecimal.ZERO : existente.getBonus();
+		String erro = mediator.alterarSeguradoPessoa(montar(bonus));
+		UtilTela.resultado(this, erro, "Segurado pessoa alterado com sucesso.");
+	}
 
-    public static void main(String[] args) { javax.swing.SwingUtilities.invokeLater(() -> new TelaSeguradoPessoa().setVisible(true)); }
+	private void excluir() {
+		if (cpf().isEmpty()) {
+			UtilTela.aviso(this, "CPF deve ser informado");
+			return;
+		}
+		if (!UtilTela.confirmar(this, "Excluir o segurado de CPF " + cpf() + "?")) {
+			return;
+		}
+		String erro = mediator.excluirSeguradoPessoa(cpf());
+		if (UtilTela.resultado(this, erro, "Segurado pessoa excluído com sucesso.")) {
+			limpar();
+		}
+	}
+
+	private void limpar() {
+		txtCpf.setValue(null);
+		txtNome.setText("");
+		txtDataNascimento.setValue(null);
+		spRenda.setValue(0.0);
+		txtBonus.setText("0.00");
+		painelEndereco.limpar();
+		txtCpf.requestFocusInWindow();
+	}
 }

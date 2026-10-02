@@ -1,51 +1,130 @@
 package br.edu.cs.poo.ac.seguro.telas;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-import java.util.function.Supplier;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
 
-import br.edu.cs.poo.ac.seguro.entidades.Endereco;
 import br.edu.cs.poo.ac.seguro.entidades.SeguradoEmpresa;
 import br.edu.cs.poo.ac.seguro.mediators.SeguradoEmpresaMediator;
 
+/**
+ * CRUD de segurado empresa em uma unica tela.
+ */
+@SuppressWarnings("serial")
 public class TelaSeguradoEmpresa extends JFrame {
-    private final SeguradoEmpresaMediator mediator = SeguradoEmpresaMediator.getInstancia();
-    private final JTextField cnpj = new JTextField(18), nome = new JTextField(25), abertura = new JTextField(10), faturamento = new JTextField(12);
-    private final JTextField logradouro = new JTextField(25), cep = new JTextField(10), numero = new JTextField(10), complemento = new JTextField(20), pais = new JTextField("Brasil", 15), cidade = new JTextField(20);
-    private final JComboBox<String> estado = new JComboBox<>(new String[]{"PE","SP","RJ","MG","BA","PR","RS","SC","CE","PB","AL","RN","SE","ES","GO","DF","MT","MS","TO","PA","AM","RO","RR","AC","AP","MA","PI"});
-    private final JCheckBox locadora = new JCheckBox("É locadora de veículos");
+	private final SeguradoEmpresaMediator mediator = SeguradoEmpresaMediator.getInstancia();
 
-    public TelaSeguradoEmpresa() {
-        setTitle("Cadastro de Segurado Empresa"); setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); setSize(720, 600); setLocationRelativeTo(null); add(formulario(), BorderLayout.CENTER);
-    }
+	private final JFormattedTextField txtCnpj = UtilTela.campoMascara("##############");
+	private final JTextField txtNome = new JTextField(28);
+	private final JFormattedTextField txtDataAbertura = UtilTela.campoData();
+	private final JSpinner spFaturamento = UtilTela.campoValor();
+	private final JCheckBox chkLocadora = new JCheckBox("É locadora de veículos");
+	private final JTextField txtBonus = new JTextField("0.00", 10);
+	private final PainelEndereco painelEndereco = new PainelEndereco();
 
-    private JPanel formulario() {
-        JPanel p = new JPanel(new GridBagLayout()); int l=0;
-        campo(p,l++,"CNPJ:",cnpj); campo(p,l++,"Nome:",nome); campo(p,l++,"Data da abertura (AAAA-MM-DD):",abertura); campo(p,l++,"Faturamento:",faturamento);
-        campo(p,l++,"Logradouro:",logradouro); campo(p,l++,"CEP:",cep); campo(p,l++,"Número:",numero); campo(p,l++,"Complemento:",complemento); campo(p,l++,"País:",pais); campo(p,l++,"Estado:",estado); campo(p,l++,"Cidade:",cidade); campo(p,l++,"",locadora);
-        JPanel b=new JPanel(); JButton buscar=new JButton("Buscar"), incluir=new JButton("Incluir"), alterar=new JButton("Alterar"), excluir=new JButton("Excluir"), limpar=new JButton("Limpar"); b.add(buscar);b.add(incluir);b.add(alterar);b.add(excluir);b.add(limpar);
-        GridBagConstraints g=new GridBagConstraints();g.gridx=0;g.gridy=l;g.gridwidth=2;g.insets=new Insets(12,4,4,4);p.add(b,g);
-        buscar.addActionListener(e->buscar()); incluir.addActionListener(e->executar(()->mediator.incluirSeguradoEmpresa(ler()))); alterar.addActionListener(e->executar(()->mediator.alterarSeguradoEmpresa(ler()))); excluir.addActionListener(e->mensagem(mediator.excluirSeguradoEmpresa(cnpj.getText()))); limpar.addActionListener(e->limpar());
-        return p;
-    }
-    private void campo(JPanel p,int l,String texto,java.awt.Component c){GridBagConstraints a=new GridBagConstraints();a.gridx=0;a.gridy=l;a.anchor=GridBagConstraints.WEST;a.insets=new Insets(4,8,4,8);p.add(new JLabel(texto),a);GridBagConstraints b=new GridBagConstraints();b.gridx=1;b.gridy=l;b.weightx=1;b.fill=GridBagConstraints.HORIZONTAL;b.insets=new Insets(4,8,4,8);p.add(c,b);}
-    private SeguradoEmpresa ler(){LocalDate d;try{d=LocalDate.parse(abertura.getText().trim());}catch(DateTimeParseException e){throw new IllegalArgumentException("Data deve estar no formato AAAA-MM-DD");}double f;try{f=Double.parseDouble(faturamento.getText().replace(',','.').trim());}catch(NumberFormatException e){throw new IllegalArgumentException("Faturamento inválido");}Endereco e=new Endereco(logradouro.getText(),cep.getText(),numero.getText(),complemento.getText(),pais.getText(),(String)estado.getSelectedItem(),cidade.getText());return new SeguradoEmpresa(nome.getText(),e,d,BigDecimal.ZERO,cnpj.getText(),f,locadora.isSelected());}
-    private void buscar(){SeguradoEmpresa s=mediator.buscarSeguradoEmpresa(cnpj.getText());if(s==null){mensagem("Segurado empresa não encontrado");return;}cnpj.setText(s.getCnpj());nome.setText(s.getNome());abertura.setText(s.getDataAbertura()==null?"":s.getDataAbertura().toString());faturamento.setText(Double.toString(s.getFaturamento()));locadora.setSelected(s.isEhLocadoraDeVeiculos());Endereco e=s.getEndereco();if(e!=null){logradouro.setText(e.getLogradouro());cep.setText(e.getCep());numero.setText(e.getNumero());complemento.setText(e.getComplemento());pais.setText(e.getPais());estado.setSelectedItem(e.getEstado());cidade.setText(e.getCidade());}}
-    private void executar(Supplier<String> acao){try{mensagem(acao.get());}catch(RuntimeException e){JOptionPane.showMessageDialog(this,e.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE);}}
-    private void mensagem(String s){JOptionPane.showMessageDialog(this,s==null?"Operação realizada com sucesso":s);}
-    private void limpar(){cnpj.setText("");nome.setText("");abertura.setText("");faturamento.setText("");logradouro.setText("");cep.setText("");numero.setText("");complemento.setText("");pais.setText("Brasil");cidade.setText("");locadora.setSelected(false);}
+	private final JButton btnBuscar = new JButton("Buscar");
+	private final JButton btnIncluir = new JButton("Incluir");
+	private final JButton btnAlterar = new JButton("Alterar");
+	private final JButton btnExcluir = new JButton("Excluir");
+	private final JButton btnLimpar = new JButton("Limpar");
+
+	public TelaSeguradoEmpresa() {
+		UtilTela.titulo(this, "Segurado Empresa");
+		txtBonus.setEditable(false);
+
+		JPanel form = UtilTela.painelForm();
+		int y = 0;
+		UtilTela.linha(form, y++, "CNPJ:", txtCnpj);
+		UtilTela.linha(form, y++, "Nome:", txtNome);
+		UtilTela.linha(form, y++, "Data de abertura:", txtDataAbertura);
+		UtilTela.linha(form, y++, "Faturamento (R$):", spFaturamento);
+		UtilTela.linha(form, y++, "", chkLocadora);
+		UtilTela.linha(form, y++, "Bônus (somente leitura):", txtBonus);
+		java.awt.GridBagConstraints c = new java.awt.GridBagConstraints();
+		c.gridy = y;
+		c.gridx = 0;
+		c.gridwidth = 2;
+		c.fill = java.awt.GridBagConstraints.HORIZONTAL;
+		c.insets = new java.awt.Insets(8, 6, 3, 6);
+		form.add(painelEndereco, c);
+
+		btnBuscar.addActionListener(e -> UtilTela.executar(this, this::buscar));
+		btnIncluir.addActionListener(e -> UtilTela.executar(this, this::incluir));
+		btnAlterar.addActionListener(e -> UtilTela.executar(this, this::alterar));
+		btnExcluir.addActionListener(e -> UtilTela.executar(this, this::excluir));
+		btnLimpar.addActionListener(e -> limpar());
+
+		UtilTela.montarJanela(this, form, UtilTela.painelBotoes(btnBuscar, btnIncluir, btnAlterar, btnExcluir, btnLimpar));
+	}
+
+	private String cnpj() {
+		return UtilTela.textoMascarado(txtCnpj);
+	}
+
+	private SeguradoEmpresa montar(BigDecimal bonus) {
+		return new SeguradoEmpresa(txtNome.getText(), painelEndereco.obter(),
+				UtilTela.lerData(txtDataAbertura, "Data de abertura"), bonus, cnpj(),
+				UtilTela.lerValor(spFaturamento, "Faturamento"), chkLocadora.isSelected());
+	}
+
+	private void buscar() {
+		if (cnpj().isEmpty()) {
+			UtilTela.aviso(this, "CNPJ deve ser informado");
+			return;
+		}
+		SeguradoEmpresa seg = mediator.buscarSeguradoEmpresa(cnpj());
+		if (seg == null) {
+			UtilTela.aviso(this, "CNPJ do segurado empresa não existente");
+			return;
+		}
+		txtNome.setText(seg.getNome());
+		UtilTela.mostrarData(txtDataAbertura, seg.getDataAbertura());
+		spFaturamento.setValue(seg.getFaturamento());
+		chkLocadora.setSelected(seg.isEhLocadoraDeVeiculos());
+		txtBonus.setText(seg.getBonus().toPlainString());
+		painelEndereco.preencher(seg.getEndereco());
+	}
+
+	private void incluir() {
+		String erro = mediator.incluirSeguradoEmpresa(montar(BigDecimal.ZERO));
+		UtilTela.resultado(this, erro, "Segurado empresa incluído com sucesso.");
+	}
+
+	private void alterar() {
+		SeguradoEmpresa existente = mediator.buscarSeguradoEmpresa(cnpj());
+		BigDecimal bonus = existente == null ? BigDecimal.ZERO : existente.getBonus();
+		String erro = mediator.alterarSeguradoEmpresa(montar(bonus));
+		UtilTela.resultado(this, erro, "Segurado empresa alterado com sucesso.");
+	}
+
+	private void excluir() {
+		if (cnpj().isEmpty()) {
+			UtilTela.aviso(this, "CNPJ deve ser informado");
+			return;
+		}
+		if (!UtilTela.confirmar(this, "Excluir o segurado de CNPJ " + cnpj() + "?")) {
+			return;
+		}
+		String erro = mediator.excluirSeguradoEmpresa(cnpj());
+		if (UtilTela.resultado(this, erro, "Segurado empresa excluído com sucesso.")) {
+			limpar();
+		}
+	}
+
+	private void limpar() {
+		txtCnpj.setValue(null);
+		txtNome.setText("");
+		txtDataAbertura.setValue(null);
+		spFaturamento.setValue(0.0);
+		chkLocadora.setSelected(false);
+		txtBonus.setText("0.00");
+		painelEndereco.limpar();
+		txtCnpj.requestFocusInWindow();
+	}
 }
